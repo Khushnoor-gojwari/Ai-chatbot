@@ -1,0 +1,34 @@
+/* Mid.css */
+
+.mid {
+  display: flex;
+  justify-content: flex-start; /* Align items to the start */
+  padding: 20px 0;
+  background-color: black;
+  color: white;
+}
+
+.section {
+  margin: 15px 10px 0 22px; /* Default margin for all buttons */
+  padding: 10px;
+  font-size: 1rem;
+  background-color: #212121;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.section:first-child {
+  margin-left: 10px; /* Specific margin for the first button (Recents) */
+}
+
+.icon {
+  margin-right: 5px;
+}
+
+.row-count {
+  margin-left: 5px;
+  font-size: 0.8rem;
+  color: gray;
+}
