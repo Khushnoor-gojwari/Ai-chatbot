@@ -47,6 +47,7 @@ const sections = [
     name: 'Recents',
     icon: <i className="bi bi-house-door-fill"></i>,
   },
+ 
   {
     name: 'Data',
     icon: <i className="bi bi-bar-chart-fill"></i>,

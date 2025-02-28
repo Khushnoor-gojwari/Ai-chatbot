@@ -39,6 +39,7 @@
 
 import React from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { Link } from 'react-router-dom';
 
 const Header = ({ onAdd }) => {
   return (
@@ -62,6 +63,7 @@ const Header = ({ onAdd }) => {
         <div>
           <h6 className="mb-0">Use Case</h6>
           <h1 className="mt-1">Flight Delays Video</h1>
+          <Link to="/model-train" href="#model-train" ><button>start modeling</button></Link>
         </div>
         <button className="btn btn-primary d-flex align-items-center" onClick={onAdd}>
           ADD

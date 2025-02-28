@@ -1,0 +1,9 @@
+.upload-btn {
+    border: none;
+    outline: none;
+    background-color: transparent;
+}
+
+.upload-btn >:hover {
+    color: rgba(209, 200, 200, 0.875);
+}
