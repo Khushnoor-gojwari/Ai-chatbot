@@ -1,11 +1,11 @@
-import { createContext, useContext } from "react";
+// import {  useContext } from "react";
 import React, { useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Link } from "react-router-dom";
-import { OpenAIOutlined, HomeOutlined } from "@ant-design/icons";
+import { HomeOutlined } from "@ant-design/icons";
 import { Navbar, Nav, Button, Offcanvas, Form } from "react-bootstrap";
 import { OverlayTrigger, Popover } from "react-bootstrap";
-import { LiaBrainSolid } from "react-icons/lia";
+
 import { CiCirclePlus } from "react-icons/ci";
 import { RiVoiceprintFill } from "react-icons/ri";
 import { FaArrowUp } from "react-icons/fa";
@@ -13,44 +13,49 @@ import { LiaAtomSolid } from "react-icons/lia";
 import ButtonList from "./ButtonList";
 
 import "../Chatbot/Chatbot.css";
-import { ButtonContext, ButtonProvider } from "../context/ButtonContext";
+// import { ButtonContext } from "../context/ButtonContext";
 import { useEffect, useRef } from "react";
 
 const ChatBot = () => {
   const [messages, setMessages] = useState([]);
-  const { buttonValue } = useContext(ButtonContext);
+  // const { buttonValue } = useContext(ButtonContext);
   const [input, setInput] = useState();
   const [response, setResponse] = useState(""); // State to store the chatbot's response
   const [showSidebar, setShowSidebar] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
-  const [show, setShow] = useState(false);
+  // const [show, setShow] = useState(false);
   const [Loading, SetLoading] = useState(false);
+  const [isListening, setIsListening] = useState(false);
 
   const chatContainerRef = useRef(null);
   const [showGenerating, setShowGenerating] = useState(true);
 
-  // useEffect(() => {
-  //   if (!Loading) {
-  //     setShowGenerating(false);
-  //   }
-  //   // Auto-scroll to the latest message
-  //   if (chatContainerRef.current) {
-  //     chatContainerRef.current.scrollTop =
-  //       chatContainerRef.current.scrollHeight;
-  //   }
-  // }, [messages, Loading]);
+  const startListening = () => {
+    const recognition = new (window.SpeechRecognition ||
+      window.webkitSpeechRecognition)();
+    recognition.lang = "en-US"; // Set language
 
-  // useEffect(() => {
-  //   const handleResize = () => {
-  //     setIsVisible(window.innerWidth > 991); // Hides if width <= 991px
-  //   };
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
 
-  //   handleResize(); // Initial check
-  //   window.addEventListener("resize", handleResize);
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript; // Get recognized text
+      setInput(transcript); // Update input field
+      setIsListening(false);
+    };
 
-  //   return () => window.removeEventListener("resize", handleResize);
-  // }, []);
+    recognition.onerror = (event) => {
+      console.error("Speech recognition error:", event.error);
+      setIsListening(false);
+    };
 
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.start();
+  };
 
   useEffect(() => {
     if (!Loading) {
@@ -74,43 +79,15 @@ const ChatBot = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // const sendMessage = async () => {
-  //   if (input.trim() !== "") {
-  //     SetLoading(true);
-  //     setMessages([...messages, input]);
-
-  //     try {
-  //       const response = await fetch("http://localhost:8000/generate/", {
-  //         method: "POST",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //         },
-  //         body: JSON.stringify({ question: input }),
-  //       });
-
-  //       if (response.ok) {
-  //         const data = await response.json();
-  //         setResponse(data.answer); // Update response state with the API response
-  //       } else {
-  //         console.error("Error generating response");
-  //       }
-  //     } catch (error) {
-  //       console.error("Error:", error);
-  //     }
-  //     SetLoading(false);
-
-  //     // Clear the input box after sending
-  //     setInput("");
-  //   }
-  // };
-
   const sendMessage = async () => {
     if (input.trim() !== "") {
       SetLoading(true);
 
       // Add user question to messages list with a placeholder for response
-      const newMessage = { question: input, answer: "..." };
-      setMessages((prevMessages) => [...prevMessages, newMessage]);
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        { question: input, answer: "..." },
+      ]);
 
       try {
         const response = await fetch("http://localhost:8000/generate/", {
@@ -124,14 +101,13 @@ const ChatBot = () => {
         if (response.ok) {
           const data = await response.json();
 
-          // Update messages array with chatbot response
+          // Update only the last message instead of resetting all messages
           setMessages((prevMessages) => {
-            const updatedMessages = [...prevMessages];
-            updatedMessages[updatedMessages.length - 1] = {
-              question: input,
-              answer: data.answer,
-            };
-            return updatedMessages;
+            return prevMessages.map((msg, index) =>
+              index === prevMessages.length - 1
+                ? { ...msg, answer: data.answer }
+                : msg
+            );
           });
         } else {
           console.error("Error generating response");
@@ -144,11 +120,6 @@ const ChatBot = () => {
       setInput(""); // Clear input after sending
     }
   };
-
-  // const generateTitle = (msg) => {
-  //   const words = msg.split(" ");
-  //   return words.length > 3 ? words.slice(0, 3).join(" ") + "..." : msg;
-  // };
 
   const generateTitle = (msg) => {
     if (typeof msg === "string") {
@@ -171,9 +142,9 @@ const ChatBot = () => {
   };
 
   return (
-    <div className="vh-100 bg-black">
+    <div className=" bg-black">
       {/* Mobile Navbar */}
-      <Navbar bg="dark" variant="dark" expand="lg" className="d-lg-none">
+      <Navbar bg="dark" variant="dark" expand="lg" className="d-lg-none mb-4">
         <Navbar.Toggle onClick={() => setShowSidebar(true)} />
         <Navbar.Brand href="#">ChatGPT</Navbar.Brand>
       </Navbar>
@@ -190,7 +161,7 @@ const ChatBot = () => {
         <Offcanvas.Body>
           <Nav className="flex-column">
             <Link to="/" className="text-decoration-none">
-              <Nav.Link className="text-white">
+              <Nav.Link href="#/" className="text-white">
                 <HomeOutlined /> Home
               </Nav.Link>
             </Link>
@@ -201,24 +172,6 @@ const ChatBot = () => {
             </Link>
 
             {/* History Section */}
-            {/* <div className="mt-3 text-white w-100">
-              <h5>History</h5>
-              {messages.map((msg, idx) => (
-                <div
-                  key={idx}
-                  className="mb-2 p-2 border border-secondary rounded text-white overflow-hidden"
-                  style={{
-                    cursor: "pointer",
-                    height: "40px",
-                    lineHeight: "20px",
-                    overflowWrap: "break-word",
-                  }}
-                  onClick={() => handleHistoryClick(msg)}
-                >
-                  {generateTitle(msg)}
-                </div>
-              ))}
-            </div> */}
 
             <div className="mt-3 text-white w-100">
               <h5>History</h5>
@@ -247,12 +200,12 @@ const ChatBot = () => {
         {/* Desktop Sidebar */}
         <div
           className="bg-dark text-white p-4 d-none d-lg-block"
-          style={{ width: "250px" }}
+          style={{ width: "250px", minHeight: "100vh" }}
         >
           <h5 className="mb-4">Menu</h5>
           <Nav className="flex-column">
             <Link to="/" className="text-decoration-none">
-              <Nav.Link className="text-white p-2">
+              <Nav.Link href="#/" className="text-white p-2">
                 <HomeOutlined className="fs-4" /> <span>Home</span>
               </Nav.Link>
             </Link>
@@ -263,24 +216,6 @@ const ChatBot = () => {
             </Link>
 
             {/* History Section */}
-            {/* <div className="mt-3 text-white w-100">
-              <h5>History</h5>
-              {messages.map((msg, idx) => (
-                <div
-                  key={idx}
-                  className="mb-2 p-2 border border-secondary rounded text-white overflow-hidden"
-                  style={{
-                    cursor: "pointer",
-                    height: "40px",
-                    lineHeight: "20px",
-                    overflowWrap: "break-word",
-                  }}
-                  onClick={() => handleHistoryClick(msg)}
-                >
-                  {generateTitle(msg)}
-                </div>
-              ))}
-            </div> */}
 
             <div className="mt-3 text-white w-100">
               <h5>History</h5>
@@ -305,85 +240,79 @@ const ChatBot = () => {
         </div>
 
         {/* Main Content */}
-        <div className="p-md-4 w-100">
-          {isVisible && <h4 className="text-white">DefconGPT</h4>}
+        <div className="p-md-4 w-100" style={{ minHeight: "100vh" }}>
+          {isVisible && <h4 className="text-white mb-4">DefconGPT</h4>}
 
-          <div className="row g-0 p-0 justify-content-center align-items-center h-100">
+          <div
+            className="row g-0 p-0 justify-content-center align-items-center mt-16"
+            style={{
+              backgroundColor: "black",
+              width: "100%",
+              marginTop: "20%",
+            }}
+          >
             <div className="col-11 col-md-10 d-flex flex-column justify-content-center align-items-center h-100">
-              {/* Response Display */}
-              {/* {Loading && (
-                <div className="mb-3 bg-dark rounded-4 text-white p-3 font-large text-center">
-                  <span className="spinner-border spinner-border-sm"></span>{" "}
-                  Generating response...
-                </div>
-              )} */}
-              {messages.length > 0 && !Loading && (
-
-
-              
-
+              {messages.length > 0 && (
                 <div
-                  className="chat-container w-100 mb-3 mt-3 bg-dark  rounded-4 text-white p-3 font-large"
+                  className="response chat-container w-100 mb-3  bg-dark  rounded-4 text-white p-3 font-large"
                   style={{
                     // minHeight: "150px",
-                    maxHeight: "400px",
-                    whiteSpace: "pre-wrap",
-                    overflowY: "auto",
+                    // maxHeight: "290px",
+                    // whiteSpace: "pre-wrap",
+                    // overflowY: "auto",
+                    marginTop: "-20%",
                   }}
                   ref={chatContainerRef}
                 >
-                  
-
                   {Loading && showGenerating && (
                     <div className="mb-3 bg-dark rounded-4 text-white p-3 font-large text-center">
                       <span className="spinner-border spinner-border-sm"></span>{" "}
                       Generating response...
                     </div>
                   )}
-                  {messages.length>0 &&(
-                  messages.map((msg, idx) => (
-                    <div key={idx} className="mb-3">
-                      <div className="d-flex justify-content-end">
-                        <div
-                          className="user-message p-2 rounded-4"
-                          style={{
-                            backgroundColor: "#fff",
-                            color: "#000",
-                            alignSelf: "flex-end",
-                            maxWidth: "fit-content", // Auto width
-                            wordWrap: "break-word",
-                            borderRadius: "10px",
-                            marginBottom: "10px",
-                          }}
-                        >
-                          {msg.question}
+                  {messages.length > 0 &&
+                    messages.map((msg, idx) => (
+                      <div key={idx} className="mb-3">
+                        <div className="d-flex justify-content-end">
+                          <div
+                            className="user-message p-2 rounded-4"
+                            style={{
+                              backgroundColor: "#fff",
+                              color: "#000",
+                              alignSelf: "flex-end",
+                              maxWidth: "fit-content", // Auto width
+                              wordWrap: "break-word",
+                              borderRadius: "10px",
+                              marginBottom: "10px",
+                            }}
+                          >
+                            {msg.question}
+                          </div>
                         </div>
-                      </div>
 
-                      {/* Chatbot Response (Left-Aligned, Auto Width) */}
-                      <div className="d-flex justify-content-start ">
-                        <div
-                          className="bot-message p-2  rounded"
-                          style={{
-                            backgroundColor: "#DCDCDC",
-                            color: "black",
-                            alignSelf: "flex-start",
-                            maxWidth: "fit-content", // Auto width
-                            wordWrap: "break-word",
-                            borderRadius: "10px",
-                          }}
-                        >
-                          {msg.answer}
+                        {/* Chatbot Response (Left-Aligned, Auto Width) */}
+                        <div className="d-flex justify-content-start ">
+                          <div
+                            className="bot-message p-2  rounded"
+                            style={{
+                              backgroundColor: "#DCDCDC",
+                              color: "black",
+                              alignSelf: "flex-start",
+                              maxWidth: "fit-content", // Auto width
+                              wordWrap: "break-word",
+                              borderRadius: "10px",
+                            }}
+                          >
+                            {msg.answer}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))
-                )}
-                </div>)}
-              
+                    ))}
+                </div>
+              )}
 
               {/* Input Section */}
-              <div className=" w-100">
+              <div className=" w-100 ">
                 {!response && (
                   <h3 className="text-center text-white">
                     What can I help with?
@@ -431,7 +360,11 @@ const ChatBot = () => {
 
                     {/* Send Button */}
                     {!input ? (
-                      <Button className="rounded-5 p-2" variant="success">
+                      <Button
+                        className="rounded-5 p-2"
+                        variant="success"
+                        onClick={startListening}
+                      >
                         <RiVoiceprintFill className="fs-4" />
                       </Button>
                     ) : (
